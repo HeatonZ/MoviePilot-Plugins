@@ -256,7 +256,7 @@ class BrushFlow(_PluginBase):
     # region 全局定义
 
     # 插件名称
-    plugin_name = "站点刷流"
+    plugin_name = "站点刷流自用"
     # 插件描述
     plugin_desc = "自动托管刷流，将会提高对应站点的访问频率。"
     # 插件图标
@@ -264,11 +264,11 @@ class BrushFlow(_PluginBase):
     # 插件版本
     plugin_version = "4.3.4"
     # 插件作者
-    plugin_author = "jxxghp,InfinityPacer"
+    plugin_author = "jxxghp,InfinityPacer,heatonz"
     # 作者主页
     author_url = "https://github.com/InfinityPacer"
     # 插件配置项ID前缀
-    plugin_config_prefix = "brushflow_"
+    plugin_config_prefix = "brushflow_self_"
     # 加载顺序
     plugin_order = 21
     # 可使用的用户级别
