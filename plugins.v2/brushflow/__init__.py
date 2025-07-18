@@ -79,6 +79,7 @@ class BrushConfig:
         self.qb_category = config.get("qb_category")
         self.site_hr_active = config.get("site_hr_active", False)
         self.site_skip_tips = config.get("site_skip_tips", False)
+        self.use_rss = config.get("use_rss", False)
 
         self.brush_tag = "刷流"
         # 站点独立配置
@@ -123,7 +124,8 @@ class BrushConfig:
             "qb_category",
             "site_hr_active",
             "site_skip_tips",
-            "del_no_free"
+            "del_no_free",
+            "use_rss"
             # 当新增支持字段时，仅在此处添加字段名
         }
         try:
@@ -193,7 +195,8 @@ class BrushConfig:
     "del_no_free": false,
     "qb_category": "刷流",
     "site_hr_active": true,
-    "site_skip_tips": true
+    "site_skip_tips": true,
+    "use_rss": false
 }]"""
         return desc + config
 
@@ -1638,6 +1641,22 @@ class BrushFlow(_PluginBase):
                                                         }
                                                     }
                                                 ]
+                                            },
+                                            {
+                                                'component': 'VCol',
+                                                'props': {
+                                                    'cols': 12,
+                                                    'md': 4
+                                                },
+                                                'content': [
+                                                    {
+                                                        'component': 'VSwitch',
+                                                        'props': {
+                                                            'model': 'use_rss',
+                                                            'label': '使用RSS获取种子',
+                                                        }
+                                                    }
+                                                ]
                                             }
                                         ]
                                     }
@@ -1814,6 +1833,7 @@ class BrushFlow(_PluginBase):
             "brush_sequential": False,
             "proxy_delete": False,
             "del_no_free": False,
+            "use_rss": False,
             "freeleech": "free",
             "hr": "yes",
             "enable_site_config": False,
@@ -2001,13 +2021,19 @@ class BrushFlow(_PluginBase):
             logger.warning(f"站点不存在：{siteid}")
             return True
 
+        brush_config = self.__get_brush_config(sitename=siteinfo.name)
+
         logger.info(f"开始获取站点 {siteinfo.name} 的新种子 ...")
-        torrents = TorrentsChain().browse(domain=siteinfo.domain)
+        if brush_config.use_rss:
+            logger.info(f"站点 {siteinfo.name} 已配置使用RSS方式获取种子")
+            torrents = TorrentsChain().rss(domain=siteinfo.domain)
+        else:
+            logger.info(f"站点 {siteinfo.name} 已配置使用浏览方式获取种子")
+            torrents = TorrentsChain().browse(domain=siteinfo.domain)
+
         if not torrents:
             logger.info(f"站点 {siteinfo.name} 没有获取到种子")
             return True
-
-        brush_config = self.__get_brush_config(sitename=siteinfo.name)
 
         if brush_config.site_hr_active:
             logger.info(f"站点 {siteinfo.name} 已开启全站H&R选项，所有种子设置为H&R种子")
@@ -2528,7 +2554,7 @@ class BrushFlow(_PluginBase):
 
         while brush_config.del_no_free and torrent_info.get("downloaded") < torrent_info.get("total_size"):
             if not torrent_task.get("freedate", None):
-                logger.warning(f"配置了‘删除促销过期的未完成下载’，但未获取到该种子的促销截止时间，跳过。")
+                logger.warning(f"配置了'删除促销过期的未完成下载'，但未获取到该种子的促销截止时间，跳过。")
                 break
             try:
                 now = datetime.now()
@@ -2541,7 +2567,7 @@ class BrushFlow(_PluginBase):
                 if delta_minutes <= 0:
                     return True, "促销过期"
             except Exception as e:
-                logger.warning(f"处理‘删除促销过期的未完成下载’时报错，继续判断其他删除条件。")
+                logger.warning(f"处理'删除促销过期的未完成下载'时报错，继续判断其他删除条件。")
                 logger.debug(f"error: {e}")
             break
 
@@ -2579,7 +2605,7 @@ class BrushFlow(_PluginBase):
 
         while brush_config.del_no_free and torrent_info.get("downloaded") < torrent_info.get("total_size"):
             if not torrent_task.get("freedate", None):
-                logger.warning(f"配置了‘删除促销过期的未完成下载’，但未获取到该种子的促销截止时间，跳过。")
+                logger.warning(f"配置了'删除促销过期的未完成下载'，但未获取到该种子的促销截止时间，跳过。")
                 break
             try:
                 now = datetime.now()
@@ -2592,7 +2618,7 @@ class BrushFlow(_PluginBase):
                 if delta_minutes <= 0:
                     return True, f"促销已过期"
             except Exception as e:
-                logger.warning(f"处理‘删除促销过期的未完成下载’时报错，继续判断其他删除条件。")
+                logger.warning(f"处理'删除促销过期的未完成下载'时报错，继续判断其他删除条件。")
                 logger.debug(f"error: {e}")
             break
 
@@ -3048,6 +3074,7 @@ class BrushFlow(_PluginBase):
             "enable_site_config": brush_config.enable_site_config,
             "site_config": brush_config.site_config,
             "del_no_free": brush_config.del_no_free,
+            "use_rss": brush_config.use_rss,
             "_tabs": self._tabs
         }
 
